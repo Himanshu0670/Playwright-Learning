@@ -185,6 +185,8 @@ flowchart TB
 - [ ] Explain the Playwright vs Selenium vs Cypress difference in 1 minute, out loud
 - [ ] Add these notes to your README under "Session 1"
 
+-------------------------------------------------------------------------------------------
+
 # 📘 Playwright with JavaScript #02 — Environment Setup
 
 ## 🎯 What you'll learn
@@ -395,3 +397,250 @@ npx playwright show-report       # Open last HTML report
 - [ ] Run tests in headed mode
 - [ ] Open the HTML report and check results for each browser
 - [ ] Push the project to GitHub (check that `node_modules` is NOT uploaded)
+
+-------------------------------------------------------------------------------------------
+
+# 📘 Playwright with JavaScript #03 — First Test, Run Modes, Reports & Debugging
+
+## 🎯 What you'll learn
+- Write your first Playwright test
+- Understand `test`, `expect`, `page`, `async`, and `await`
+- When to use `await` and when not to
+- Run tests: all files, one file, one browser, headed mode
+- Open the HTML report
+- Debug tests with the **Playwright Inspector**
+
+---
+
+## 1️⃣ Create a Test File
+
+1. Right-click the `tests/` folder → **New File** (or click the ➕ icon)
+2. Name it with `.spec.js` at the end, e.g. `firstTest.spec.js`
+
+> 💡 Playwright only picks up files ending in `.spec.js` or `.test.js`.
+
+---
+
+## 2️⃣ Your First Test Script
+
+```javascript
+// tests/firstTest.spec.js
+
+// Import test (to create tests) and expect (for assertions)
+const { test, expect } = require('@playwright/test');
+
+test('Open Google page and check title', async ({ page }) => {
+  // Open the URL
+  await page.goto('https://www.google.com');
+
+  // Verify the title
+  await expect(page).toHaveTitle('Google');
+
+  // Print the title (fetched from browser → needs await)
+  const pageTitle = await page.title();
+  console.log('Page title is:', pageTitle);
+
+  // Print the URL (already known to Playwright → no await)
+  const pageURL = page.url();
+  console.log('Page URL is:', pageURL);
+});
+```
+
+---
+
+## 3️⃣ Understanding Each Part
+
+### Import statement
+```javascript
+const { test, expect } = require('@playwright/test');
+```
+| Part | Meaning |
+|---|---|
+| `require('@playwright/test')` | Imports the Playwright Test module (from `node_modules`) |
+| `{ test, expect }` | Takes only the 2 functions we need (destructuring) |
+| `const` | They should never change, so they're declared as constants |
+| `test` | Used to **create** a test |
+| `expect` | Used for **assertions / validations** (title, text, visibility, URL…) |
+
+### Test structure
+```javascript
+test('test name', async ({ page }) => {
+  // test code here
+});
+```
+| Part | Meaning |
+|---|---|
+| `'test name'` | 1st argument: name of the test (shown in reports) |
+| `async ({ page }) => { }` | 2nd argument: the test function |
+| `{ page }` | Built-in **Playwright fixture** = a new **browser tab** for this test |
+| `async` | **Mandatory.** Allows using `await` inside the function |
+| `=>` | Arrow function |
+
+> 💡 All browser actions (go to URL, click, fill, get title…) are done through the **`page`** object.
+
+---
+
+## 4️⃣ Why `async` / `await`?
+
+JavaScript doesn't wait for the browser by default. It sends a command and **immediately moves to the next line**.
+
+**Without `await`:**
+```mermaid
+sequenceDiagram
+    participant JS as JavaScript
+    participant B as Browser
+    JS->>B: page.goto(google.com)
+    JS->>JS: Immediately runs expect(title) ❌
+    Note over B: Page still loading...
+    Note over JS: Test FAILS — page not loaded yet
+```
+
+**With `await`:**
+```mermaid
+sequenceDiagram
+    participant JS as JavaScript
+    participant B as Browser
+    JS->>B: await page.goto(google.com)
+    Note over JS: Waits ⏳
+    B-->>JS: Page loaded ✅
+    JS->>B: await expect(page).toHaveTitle('Google')
+    B-->>JS: Title matches ✅
+```
+
+| Keyword | What it does |
+|---|---|
+| `async` | Marks the function as asynchronous. It returns a **Promise**. Without it, you **can't** use `await`. |
+| `await` | **Waits** for a Promise to finish before moving to the next line |
+| Promise | "I promise I'll finish this later" — an operation that takes time |
+
+> ⚠️ **Rule:** write `await` before **every browser action**. Forgetting it causes random failures.
+
+---
+
+## 5️⃣ When to Use `await`
+
+> 🧠 **Easy rule:** If Playwright must **fetch it from the browser** → `await`. If Playwright **already knows it** → no `await`.
+
+| Code | `await`? | Why |
+|---|---|---|
+| `page.goto(url)` | ✅ Yes | Browser must load the page |
+| `page.title()` | ✅ Yes | Title is fetched from the browser (DOM). Returns a Promise. |
+| `expect(page).toHaveTitle()` | ✅ Yes | Checks the browser, waits & retries |
+| `page.click()`, `page.fill()` | ✅ Yes | Browser actions |
+| `page.url()` | ❌ No | Playwright already has the URL in memory. Synchronous. |
+
+---
+
+## 6️⃣ Run Tests — Commands
+
+| Command | What it does |
+|---|---|
+| `npx playwright test` | Run **all** tests in `tests/` on **all configured browsers** (headless) |
+| `npx playwright test firstTest.spec.js` | Run only **one file** |
+| `npx playwright test firstTest.spec.js --project=chromium` | Run one file on **one browser** |
+| `npx playwright test --project=firefox` | Run all tests on Firefox only |
+| `npx playwright test --project=webkit` | Run all tests on WebKit (Safari engine) only |
+| `npx playwright test --headed` | Run with the **browser visible** |
+| `npx playwright test firstTest.spec.js --project=chromium --headed` | One file + one browser + visible |
+| `npx playwright test firstTest.spec.js --project=chromium --debug` | Run in **debug mode** (Inspector) |
+| `npx playwright show-report` | Open the **last** HTML report |
+
+> 💡 Project names must match `playwright.config.js` exactly: `chromium`, `firefox`, `webkit` (lowercase).
+
+### Understanding the test count
+```
+Running 9 tests using 4 workers
+```
+| File | Tests | × Browsers | Total |
+|---|---|---|---|
+| `example.spec.js` | 2 | × 3 | 6 |
+| `firstTest.spec.js` | 1 | × 3 | 3 |
+| **Total** | | | **9** |
+
+### Terminal tips
+| Shortcut | Action |
+|---|---|
+| `Ctrl + C` | Stop / quit the running process (e.g. report server) |
+| `↑` / `↓` arrows | Show previous commands |
+| `cls` (Windows) / `clear` (Mac/Linux) | Clear the terminal |
+
+---
+
+## 7️⃣ Run Modes
+
+| Mode | Command flag | Browser visible? | Use for |
+|---|---|---|---|
+| Headless | *(default, no flag)* | ❌ No | Fast runs, CI/CD |
+| Headed | `--headed` | ✅ Yes | Watching tests run |
+| Debug | `--debug` | ✅ Yes + **Inspector** | Step-by-step debugging |
+
+> 💡 Debug mode is **headed by default**, so no need to add `--headed`.
+
+---
+
+## 8️⃣ Debug Mode & Playwright Inspector
+
+```bash
+npx playwright test firstTest.spec.js --project=chromium --debug
+```
+
+**What happens:**
+1. The browser opens (headed)
+2. The **Playwright Inspector** window opens
+3. Execution **pauses** at the first `await` line
+4. You control the test step by step
+
+| Inspector button | What it does |
+|---|---|
+| ▶️ **Resume** | Runs the rest of the test at normal speed (until the end or next breakpoint) |
+| ⏸ **Pause** | Pauses the test so you can inspect the page, DOM, and locators |
+| ⤵️ **Step Over** | Runs **one** step and stops at the **next `await`** browser action |
+| 🎯 **Pick locator** | Click an element in the browser to get its locator |
+
+**Debug mode is useful for:**
+- Watching test behavior line by line
+- Finding **locator issues**
+- Finding **timing / sync problems**
+- Understanding **why a test failed**
+
+---
+
+## 📝 Quick Command Cheat Sheet
+
+```bash
+npx playwright test                                   # all tests, all browsers, headless
+npx playwright test <file>                            # one file
+npx playwright test <file> --project=chromium         # one file, one browser
+npx playwright test --headed                          # browser visible
+npx playwright test <file> --project=chromium --debug # debug with Inspector
+npx playwright show-report                            # open last HTML report
+```
+
+---
+
+## 🎤 Interview Questions from This Video
+
+1. **What do `test` and `expect` do?** → `test` creates a test case; `expect` performs assertions.
+2. **What is the `page` object?** → A built-in Playwright fixture representing a browser tab. All browser actions use it.
+3. **Why is `async` needed?** → It makes the function asynchronous so we can use `await` inside it.
+4. **What does `await` do?** → Waits for a Promise (browser action) to finish before running the next line.
+5. **What happens if you forget `await`?** → The next line runs before the browser finishes, causing flaky/failed tests.
+6. **Why `await page.title()` but not `page.url()`?** → `title()` fetches from the browser and returns a Promise; `url()` is already known to Playwright and is synchronous.
+7. **How do you run a test on only one browser?** → `npx playwright test --project=chromium`
+8. **How do you run a single test file?** → `npx playwright test <fileName>`
+9. **What is headless vs headed mode?** → Headless = no browser window (default); headed = browser visible (`--headed`).
+10. **How do you debug a Playwright test?** → `npx playwright test --debug` opens the Inspector with Resume, Pause, and Step Over.
+11. **2 tests in a file and 3 browsers configured — how many runs?** → 6.
+
+---
+
+## ✅ Practice Task
+- [ ] Create `firstTest.spec.js` and write the Google title test from memory
+- [ ] Add a URL assertion: `await expect(page).toHaveURL(/google/)`
+- [ ] Print the title and URL in the console
+- [ ] Remove one `await` on purpose → run → see what happens → put it back
+- [ ] Run the test on Chromium only, then Firefox only, then WebKit only
+- [ ] Run in headed mode and watch the browser
+- [ ] Run in debug mode and use Step Over through each line
+- [ ] Open the HTML report and check the results per browser
+- [ ] Write a second test for another site (e.g. `https://playwright.dev`) and verify its title
