@@ -1,3 +1,190 @@
+# 📘 Playwright with JavaScript #01 — Introduction to Playwright
+
+## 🎯 What you'll learn
+- What Playwright is and why it's popular
+- Key features of Playwright
+- How parallel testing saves time
+- Playwright vs Selenium vs Cypress
+- When to choose which tool
+
+---
+
+## 1️⃣ What is Playwright?
+
+> **Playwright** is an **open-source test automation framework** developed by **Microsoft** for testing modern web applications.
+
+| Point | Detail |
+|---|---|
+| Type | Open-source test automation framework |
+| Created by | Microsoft |
+| Used for | Web testing, API testing, mobile web testing |
+| Browsers | Chromium (Chrome, Edge), Firefox, WebKit (Safari engine) |
+| Languages | JavaScript, TypeScript, Python, Java, .NET (C#) |
+| OS | Windows, macOS, Linux |
+| CI tools | GitHub Actions, Jenkins, GitLab CI, Azure DevOps |
+
+---
+
+## 2️⃣ Key Features
+
+### 🌐 Cross-browser testing
+Run the **same test** on Chromium, Firefox, and WebKit to check browser compatibility.
+
+### 🗣 Multi-language support
+Write tests in JavaScript, TypeScript, Python, Java, or C#. The same APIs are available in every language, which makes team collaboration easy.
+
+### 💻 Cross-platform
+Runs on Windows, Mac, Linux, local machines, cloud servers, and CI pipelines.
+
+### ⚡ Easy setup
+One command downloads browsers, creates the config file, and adds sample tests. A project is ready in about 5 minutes.
+
+### 🧪 Multiple testing types in one tool
+| Type | What it tests | Example |
+|---|---|---|
+| Functional / E2E | User flows | Login, add to cart, submit a form |
+| API | Backend responses | GET/POST requests, status codes |
+| Accessibility | Usability for people with disabilities | Screen-reader labels, roles (with axe-core) |
+| Mobile web | Websites in mobile browsers (emulated) | Site on iPhone/Pixel viewport |
+
+> ⚠️ **Mobile web testing ≠ mobile app testing.** Playwright tests websites in mobile browsers, not native Android/iOS apps.
+
+### 📊 Built-in reporters
+- Built-in: **HTML, List, Line, Dot, JSON, JUnit**
+- The HTML report shows steps, errors, and screenshots of failures
+- **Custom reporters** let teams create their own report format
+
+### 🔄 CI/CD support
+**CI/CD = Continuous Integration / Continuous Delivery (Deployment)**
+
+```mermaid
+flowchart LR
+    A[Push code to GitHub] --> B[CI pipeline starts]
+    B --> C[Tests run automatically]
+    C --> D[Report generated]
+```
+No need to run tests manually after every change.
+
+### 🐳 Docker support
+Solves the **"works on my machine"** problem.
+
+| Without Docker | With Docker |
+|---|---|
+| Different browser, OS, and Node versions on each laptop | Fixed browser, OS, Node, and Playwright versions in a container |
+| Test passes for me, fails for you | Same results everywhere (local + CI) |
+| Random failures | Predictable, stable tests |
+
+---
+
+## 3️⃣ Built-in Tools
+
+| Tool | What it does |
+|---|---|
+| 🎥 **Codegen** | Records your browser actions (click, type, navigate) and **auto-generates test code** with good locators |
+| 🔍 **Playwright Inspector** | Runs tests **step by step**, lets you pause/resume, and helps pick locators |
+| 🧭 **Trace Viewer** | After a run, shows a full **timeline**: each action, DOM snapshots, screenshots, console, and network logs to find the **root cause** of failures |
+| 🎯 **Locator picker** | Suggests the best locator (role, text, test ID) for an element |
+
+```bash
+npx playwright codegen https://example.com   # record actions → code
+npx playwright test --debug                  # open Playwright Inspector
+npx playwright show-trace trace.zip          # open Trace Viewer
+```
+
+> 💡 Codegen is great for learning and getting locators, but always **clean up and refactor** generated code before using it.
+
+---
+
+## 4️⃣ Auto-Waiting
+
+Playwright **automatically waits** for elements to be ready (visible, enabled, stable) before acting on them.
+
+- ✅ No need to write manual waits
+- ✅ Fewer **flaky tests** (tests that randomly pass/fail)
+- ✅ Works well with modern apps (React, Angular, Vue) where pages keep re-rendering
+
+---
+
+## 5️⃣ Parallel Testing
+
+Playwright runs tests **at the same time** using **workers** (parallel processes).
+
+```mermaid
+flowchart TB
+    subgraph S["Sequential (e.g. Selenium default) ≈ 40s"]
+        direction LR
+        T1[Login 10s] --> T2[Search 10s] --> T3[Add to Cart 10s] --> T4[Checkout 10s]
+    end
+    subgraph P["Playwright with 4 workers ≈ 10s"]
+        direction LR
+        W1[Worker 1: Login]
+        W2[Worker 2: Search]
+        W3[Worker 3: Add to Cart]
+        W4[Worker 4: Checkout]
+    end
+```
+
+**Real-world example:**
+| | Sequential | Parallel (6 workers) |
+|---|---|---|
+| 300 tests × 2 sec | ~600 sec (10 min) | ~100 sec (~1.5 min) |
+
+> Same tests, same code → much faster execution.
+
+---
+
+## 6️⃣ Playwright vs Selenium vs Cypress
+
+| Feature | 🎭 Playwright | 🌐 Selenium | 🌲 Cypress |
+|---|---|---|---|
+| Speed | ⚡ Very fast | Slower (older architecture) | Fast |
+| Auto-waiting | ✅ Built-in | ❌ Mostly manual waits | ✅ Built-in |
+| Browsers | Chromium, Firefox, WebKit | Widest support (most mature) | Chromium-based best, limited others |
+| Languages | JS, TS, Python, Java, C# | Java, Python, C#, Ruby, JS | JavaScript / TypeScript only |
+| Testing types | Web + API + mobile web | Mainly web | Mainly web (frontend) |
+| Modern frameworks | ✅ Smooth | Needs extra waits/retries | ✅ Very friendly |
+| Setup | Easy, built-in test runner | Drivers + third-party tools | Easy, single command |
+| Debugging | Trace Viewer, Inspector, video | Relies on third-party tools | Excellent, in-browser |
+| Multi-tab / multi-user | ✅ Yes, in one test | ✅ Tabs supported | ❌ No multi-tab |
+| Parallel execution | ✅ Built-in, free | Needs Grid / TestNG setup | Limited / paid dashboard |
+| Community | Newer, growing fast | Largest, most mature | Strong, JS-focused |
+
+---
+
+## 7️⃣ When to Use Which Tool
+
+| Choose | When |
+|---|---|
+| 🎭 **Playwright** | Starting fresh, modern apps (React/Angular/Vue), need web + API + mobile web testing, fast & stable tests, cross-browser, parallel runs, strong debugging |
+| 🌐 **Selenium** | Large enterprise/legacy projects already built on Selenium, need very old browser support, mature ecosystem |
+| 🌲 **Cypress** | Frontend-heavy apps, developers and testers share the same JS codebase, component testing, mainly Chrome-based testing |
+
+---
+
+## 🎤 Interview Questions from This Video
+
+1. **What is Playwright?** → An open-source test automation framework by Microsoft for modern web apps.
+2. **Which browsers does Playwright support?** → Chromium (Chrome, Edge), Firefox, WebKit (Safari engine).
+3. **Which languages does Playwright support?** → JavaScript, TypeScript, Python, Java, .NET (C#).
+4. **What types of testing can you do with Playwright?** → Functional/E2E, API, accessibility, mobile web.
+5. **Can Playwright test native mobile apps?** → No. It tests websites in mobile browsers (emulation), not native apps.
+6. **What is auto-waiting?** → Playwright waits for elements to be ready before acting, which reduces flaky tests.
+7. **What are workers in Playwright?** → Parallel processes that run tests at the same time.
+8. **What is Codegen?** → A tool that records browser actions and generates test code.
+9. **Difference between Inspector and Trace Viewer?** → Inspector debugs **live** step by step; Trace Viewer analyzes a **completed** run in detail.
+10. **How does Docker help in testing?** → Gives the same environment everywhere and solves "works on my machine".
+11. **Playwright vs Selenium — key differences?** → Playwright is faster, has auto-waiting, a built-in runner, parallel runs, API testing, and better debugging tools. Selenium has wider language/browser support and a bigger community.
+12. **Why not Cypress?** → JS/TS only, no multi-tab support, limited multi-browser support.
+
+---
+
+## ✅ Practice Task
+- [ ] Write in your own words: what is Playwright and why is it popular?
+- [ ] List 5 key features of Playwright from memory
+- [ ] Draw (or explain) how parallel testing saves time
+- [ ] Explain the Playwright vs Selenium vs Cypress difference in 1 minute, out loud
+- [ ] Add these notes to your README under "Session 1"
+
 # 📘 Playwright with JavaScript #02 — Environment Setup
 
 ## 🎯 What you'll learn
